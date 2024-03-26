@@ -1,0 +1,1 @@
+docker build -t citus-node -f postgres-citus.dockerfile .
