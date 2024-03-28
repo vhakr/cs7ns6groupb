@@ -1,14 +1,40 @@
-from flask import Flask
+from flask import Flask, request
+import psycopg2
 
+LEADERSERVER = ""
 app = Flask(__name__)
+
+DBNAME = 'template1'
+USER = 'postgres'
 
 @app.route('/')
 def home_page():
-    return f'<p>/user/create/(username) to create a user</p>'
+    try:
+        conn = psycopg2.connect(f"dbname='{DBNAME}' user='{USER}'")
+        return f'<p>connected to database</p>'
+    except Exception as e:
+        return f'<p>Unable to connect to database:</p> <p style="color:red">{e}</p>'
 
-@app.route('/user/create/<string:username>')
-def create_user(username):
-    return f'<p>creating user {username}</p>'
+
+@app.route('/customer/create')
+def create_customer():
+    customer = request.args.get('customer')
+    pwd = request.args.get('pwd')
+    if customer == None or pwd == None: 
+        return f'<p>Incomplete customer data provided</p>'
+    try:
+        conn = psycopg2.connect("dbname='template1' user='postgres'")
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+insert into customer (customer_name, password)
+values ('{customer}', '{pwd}')
+        """)
+        conn.commit()
+        return f'<p>creating customer: {customer}, password: {pwd}</p>'
+    except Exception as e:
+        return f'<p>Unable to complete action:</p> <p style="color:red">{e}</p>'
+
 
 @app.route('/user/validate/<string:username>')
 def validate_user(username):
