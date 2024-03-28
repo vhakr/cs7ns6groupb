@@ -20,15 +20,19 @@ def home_page():
 def create_customer():
     customer = request.args.get('customer')
     pwd = request.args.get('pwd')
+    region = request.args.get('region')
     if customer == None or pwd == None: 
         return f'<p>Incomplete customer data provided</p>'
+    if region == None:
+        region = 'null'
+    else: region = f'{region}'
     try:
         conn = psycopg2.connect("dbname='template1' user='postgres'")
         cursor = conn.cursor()
 
         cursor.execute(f"""
-insert into customer (customer_name, password)
-values ('{customer}', '{pwd}')
+insert into customer (customer_name, password, region)
+values ('{customer}', '{pwd}', {region})
         """)
         conn.commit()
         return f'<p>creating customer: {customer}, password: {pwd}</p>'

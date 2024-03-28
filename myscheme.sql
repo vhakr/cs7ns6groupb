@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS family (
 
 CREATE TABLE IF NOT EXISTS customer (
     customer_name varchar(255) not null PRIMARY KEY,
-    family_id INT REFERENCES family(family_id),
-    password varchar(255) not null
+    region varchar(255),
+    password varchar(255) not null,
+    family_id INT REFERENCES family(family_id)
 );
 
 ALTER TABLE family
