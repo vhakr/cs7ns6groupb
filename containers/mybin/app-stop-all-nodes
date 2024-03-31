@@ -1,0 +1,15 @@
+#!/bin/bash
+
+stop_pg() {
+    d=$1
+    echo "stopping $d"
+    pg_ctl -D $d stop
+}
+
+export -f stop_pg
+
+find /app/pgdata -mindepth 1 -maxdepth 1 -type d | \
+    parallel stop_pg {}
+
+echo "finished"
+

@@ -1,0 +1,10 @@
+#!/bin/bash
+node=$1
+
+if [ -z "$node" ]; then
+	echo "Please provide node name"
+	exit 1
+fi
+
+pg_ctl -D /usr/local/pgsql/citus-sr/$node stop
+pg_ctl -D /usr/local/pgsql/citus-sr/$node -l log.$node start

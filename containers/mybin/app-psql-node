@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+f=/usr/local/pgsql/citus-sr/$1/postgresql.conf
+if [ -f $f ];  then
+	port=$(grep "^port" $f | awk '{print $3}')
+
+else
+	echo "No such node: $f"
+	exit 1
+fi
+
+if [ -z "$port" ]; then
+	psql
+fi
+psql -p $port

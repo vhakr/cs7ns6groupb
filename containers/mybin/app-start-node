@@ -1,0 +1,10 @@
+#!/bin/bash
+node=$1
+
+if [ -z "$node" ]; then
+	echo "Please provide node name"
+	exit 1
+fi
+
+mkdir -p /app/logs
+pg_ctl -D /app/pgdata/$node -l /app/pgdata/$node/log start
