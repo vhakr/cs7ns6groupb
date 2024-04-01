@@ -1,0 +1,15 @@
+#!/bin/bash
+if [ -z "$1" ]; then
+  echo "Need region id"
+  exit 1
+fi
+
+psql -c "SELECT shardid, shardstate, shardlength, nodename, nodeport, placementid
+  FROM pg_dist_placement AS placement,
+       pg_dist_node AS node
+ WHERE placement.groupid = node.groupid
+   AND node.noderole = 'primary'
+   AND shardid = (
+     SELECT get_shard_id_for_distribution_column('family', '$1')
+   );"
+

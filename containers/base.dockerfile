@@ -30,9 +30,6 @@ RUN groupadd -r postgres && useradd --no-log-init -r -g postgres -d /app postgre
 RUN mkdir -p /app/pgdata
 RUN chown -R postgres:postgres /app
 WORKDIR /app/pgdata
-USER postgres
-
-COPY mybin /app/bin
 
 USER root
 RUN apt-get install -y parallel

@@ -1,0 +1,4 @@
+#!/bin/bash
+app-start-all-nodes
+app-psql-node w1 -f /app/init.sql
+app-stop-all-nodes
