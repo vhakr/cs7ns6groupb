@@ -12,7 +12,7 @@ CREATE TABLE customer (
 
 CREATE TABLE family (
     tenant_id INT,
-    id INT,
+    id SERIAL,
     -- m1_tenant_id INT, 
     -- m2_tenant_id INT, 
     -- m3_tenant_id INT, 
