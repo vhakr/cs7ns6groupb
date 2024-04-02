@@ -9,6 +9,6 @@ run apt-get install -y python3-psycopg2
 
 run mkdir -p /app
 copy app.py /app/app.py
-copy web-server-entrypoint.sh /app/
+copy mybin/web-server-entrypoint.sh /app/
 
 entrypoint /app/web-server-entrypoint.sh

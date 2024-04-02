@@ -34,3 +34,15 @@ WORKDIR /app/pgdata
 USER root
 RUN apt-get install -y parallel
 USER postgres
+
+USER root
+run apt-get update
+run apt-get install -y python3
+run apt-get install -y python3-pip
+run apt-get install -y postgresql-server-dev-all
+run apt-get install -y python3-flask
+run apt-get install -y python3-psycopg2
+
+run mkdir -p /app
+run chown -R postgres:postgres /app
+USER postgres

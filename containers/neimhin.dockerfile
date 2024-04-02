@@ -12,3 +12,5 @@ entrypoint /app/bin/app-entrypoint.sh
 copy main_coordinator_init.sql /app/init.sql
 
 run app-init-main-coordinator
+
+copy app.py /app/app.py

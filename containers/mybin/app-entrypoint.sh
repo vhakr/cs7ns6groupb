@@ -1,4 +1,4 @@
 #!/bin/bash
 app-start-all-nodes
-/bin/bash
+web-server-entrypoint.sh
 app-stop-all-nodes
