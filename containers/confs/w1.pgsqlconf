@@ -1,2 +1,3 @@
+listen_addresses = '*'
 port = 9701
 shared_preload_libraries = 'citus'
