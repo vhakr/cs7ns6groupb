@@ -1,0 +1,3 @@
+#!/bin/bash
+docker exec -it app psql -c "select * from family;"
+docker exec -it app psql -c "select * from customer;"
