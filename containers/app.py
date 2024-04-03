@@ -225,8 +225,71 @@ def family_join():
         print(e)
         return f'<p>Unable to complete action:</p> <p style="color:red">{e}</p>'
 
-
 @app.route('/user/validate/<string:username>')
 def validate_user(username):
     return f'<p>validating user {username}</p>'
 
+@app.route('/family/purchase')
+def family_purchase():
+    args, argerr = require_args('till', 'till_pwd', 'customer', 'pwd', 'amount_euro_equivalent')
+    if argerr:
+        return argerr
+    try:
+        with connect() as conn:
+            cursor = conn.cursor()
+
+            # TODO authenticate till
+
+            # TODO authenticate customer
+
+            q = f"""
+                SELECT tenant_id, name FROM customer WHERE
+                    name = '{args['customer']}' AND
+                    password = '{args['pwd']}';
+            """
+            cursor.execute(q)
+            c = cursor.fetchone()
+            print("customer", c)
+            if c is None:
+                return r_bad_request({
+                    'message': 'failed to authenticate customer'
+                })
+            ctenant_id, cname = c
+
+
+            q = f"""
+                SELECT tenant_id, id FROM family WHERE
+                    member1_id = '{args['customer']}' OR
+                    member2_id = '{args['customer']}' OR
+                    member3_id = '{args['customer']}' OR
+                    member4_id = '{args['customer']}';
+            """
+            cursor.execute(q)
+            f = cursor.fetchone()
+            if f is None:
+                return r_bad_request({
+                    'message': 'customer is not in a family'})
+            print("family", f)
+            ftenant_id, fid = f
+            # CREATE TABLE purchase (
+            #     tenant_id INT, id INT,
+            #     family_id INT,
+            #     customer_tenant_id INT, customer_name VARCHAR(255),
+            #     amount_euro_equivalent DECIMAL,
+            #     PRIMARY KEY (tenant_id, id)
+            # );
+            amount = args['amount_euro_equivalent']
+            q = f"""
+                INSERT INTO purchase ( tenant_id,   family_id, customer_tenant_id, customer_name, amount_euro_equivalent) VALUES
+                                     ({ftenant_id},{fid     },{ctenant_id       },'{cname       }',{amount})
+                RETURNING *;
+            """
+            print(q)
+            cursor.execute(q)
+            p = cursor.fetchone()
+            conn.commit()
+            return r_ok({'purchase': p})
+
+    except Exception as e:
+        print(e)
+        return f'<p>Unable to complete action:</p> <p style="color:red">{e}</p>'

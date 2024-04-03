@@ -1,3 +1,5 @@
 #!/bin/bash
+docker exec -it app psql -c "select citus_set_coordinator_host('localhost');"
 docker exec -it app psql -c "select * from family;"
 docker exec -it app psql -c "select * from customer;"
+docker exec -it app psql -c "select * from purchase;"

@@ -25,8 +25,8 @@ CREATE TABLE family (
 );
 
 
-CREATE TABLE purchases (
-    tenant_id INT, id INT,
+CREATE TABLE purchase (
+    tenant_id INT, id SERIAL,
     family_id INT,
     customer_tenant_id INT, customer_name VARCHAR(255),
     amount_euro_equivalent DECIMAL,
@@ -34,17 +34,17 @@ CREATE TABLE purchases (
 );
 
 SELECT create_distributed_table('family', 'tenant_id');
-SELECT create_distributed_table('purchases', 'tenant_id', colocate_with => 'family');
+SELECT create_distributed_table('purchase', 'tenant_id', colocate_with => 'family');
 SELECT create_distributed_table('customer', 'tenant_id', colocate_with => 'family');
 SELECT update_distributed_table_colocation('family', colocate_with => 'customer');
--- SELECT update_distributed_table_colocation('purchases', colocate_with => 'customer');
+-- SELECT update_distributed_table_colocation('purchase', colocate_with => 'customer');
 
 ALTER TABLE customer
     ADD CONSTRAINT fk_family
         FOREIGN KEY (tenant_id, family_id)
         REFERENCES family(tenant_id, id);
 
-ALTER TABLE purchases
+ALTER TABLE purchase
     ADD CONSTRAINT fk_family
         FOREIGN KEY (tenant_id, family_id) 
         REFERENCES family(tenant_id, id);
@@ -55,8 +55,10 @@ ALTER TABLE family      ADD CONSTRAINT fk_member2 FOREIGN KEY (tenant_id, member
 ALTER TABLE family      ADD CONSTRAINT fk_member3 FOREIGN KEY (tenant_id, member3_id) REFERENCES customer(tenant_id, name);
 ALTER TABLE family      ADD CONSTRAINT fk_member4 FOREIGN KEY (tenant_id, member4_id) REFERENCES customer(tenant_id, name);
 
--- FIXME: fails because purchases is not colocated with customer
--- ALTER TABLE purchases
+-- FIXME: fails because purchase is not colocated with customer
+-- ALTER TABLE purchase
 --     ADD CONSTRAINT fk_customer
 --         FOREIGN KEY (customer_tenant_id, customer_name) 
 --         REFERENCES customer(tenant_id, name);
+
+SELECT citus_set_coordinator_host('neimhin');
