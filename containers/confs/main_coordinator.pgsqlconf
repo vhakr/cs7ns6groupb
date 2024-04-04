@@ -4,3 +4,4 @@ max_wal_senders = 3
 hot_standby = on
 shared_preload_libraries = 'citus'
 port = 5432
+default_transaction_isolation = serializable
