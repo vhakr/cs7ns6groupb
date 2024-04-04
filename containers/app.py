@@ -308,7 +308,7 @@ def timestamp_n_seconds_ago(n):
     timestamp = current_time - time_delta
     return timestamp.timestamp()
 
-print(timestamp_n_seconds_ago(60))
+print(timestamp_n_seconds_ago(1))
 
 # /family/voucher
 # requires authentication of user (via loyalty card)
@@ -349,9 +349,9 @@ def family_voucher():
                     'message': 'failed to authenticate customer'
                 })
             ctenant_id, cname, family_id = c
-            since = timestamp_n_seconds_ago(60) # TODO: in production use 60*60*24*21 (21 days)
+            since = timestamp_n_seconds_ago(6) # TODO: in production use 60*60*24*21 (21 days)
             q = f"""
-                SELECT amount_euro_equivalent FROM purchase WHERE
+                SELECT amount_euro_equivalent, timestamp FROM purchase WHERE
                     tenant_id = '{ctenant_id}' AND
                     family_id = {family_id} AND
                     timestamp > {since};

@@ -20,3 +20,7 @@ get "/family/join?customer=cian&pwd=pwd&family_tenant_id=eur&family_id=0"
 get "/family/purchase?customer=cian&pwd=pwd&till=TODO&till_pwd=TODO&amount_euro_equivalent=10"
 
 get "/family/voucher?till=till&till_pwd=till_pwd&customer=cian&pwd=pwd&subtotal=40"
+
+sleep 6
+
+get "/family/voucher?till=till&till_pwd=till_pwd&customer=cian&pwd=pwd&subtotal=40"
