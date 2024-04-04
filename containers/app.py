@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response
 import psycopg2
+import json
+import datetime
+import math
 
-def r_bad_request(obj, status=400, mimetype="application/json"):
+def r_bad_request(obj, status=400, mimetype="application/json", format=json.dumps):
     print(obj)
-    return Response(obj, status=status, mimetype=mimetype)
+    return Response(format(obj), status=status, mimetype=mimetype)
 
-def r_internal_server_error(obj, status=500, mimetype="application/json"):
-    return Response(obj, status=statu, mimetype=mimetype)
+def r_internal_server_error(obj, status=500, mimetype="application/json", format=json.dumps):
+    return Response(format(obj), status=status, mimetype=mimetype)
 
-def r_nyi(status=500, mimetype='application/json'):
-    return Response({"message": "Not Yet Implemented"}, status=status, mimetype=mimetype)
+def r_nyi(status=500, mimetype='application/json', format=json.dumps):
+    return Response(format({"message": "Not Yet Implemented"}), status=status, mimetype=mimetype)
 
-def r_ok(obj, status=200, mimetype="application/json"):
+def r_ok(obj, status=200, mimetype="application/json", format=json.dumps):
     o = "ok" if obj is None else obj
-    return Response(o, status=status, mimetype=mimetype)
+    return Response(format(o), status=status, mimetype=mimetype)
 
 def require_args(*args):
     argv = {}
@@ -59,7 +62,7 @@ def create_customer():
 
         cursor.execute(f"""
 insert into customer (name, password, tenant_id)
-values ('{args['customer']}', '{args['pwd']}', {args['tenant_id']}) returning *;
+values ('{args['customer']}', '{args['pwd']}', '{args['tenant_id']}') returning *;
         """)
         conn.commit()
         return r_ok({"customer": cursor.fetchone()})
@@ -118,7 +121,7 @@ def family_create():
                 member1_id 
                 {', id' if args['family_id'] else ''})
             VALUES (
-                {tenant_id},
+                '{tenant_id}',
                 '{args['customer']}'
                 {',' + args['family_id'] if args['family_id'] else ''}
                 ) RETURNING *; 
@@ -174,7 +177,7 @@ def family_join():
 
             q = f"""
             SELECT member1_id, member2_id, member3_id, member4_id FROM family WHERE
-                tenant_id = {family_tenant_id} AND
+                tenant_id = '{family_tenant_id}' AND
                 id = {family_id};
             """
             print(q)
@@ -210,7 +213,7 @@ def family_join():
                 UPDATE family
                 SET member{i}_id = '{args['customer']}'
                 WHERE 
-                    tenant_id = {family_tenant_id} AND
+                    tenant_id = '{family_tenant_id}' AND
                     id = {family_id} 
                 RETURNING *;
             """
@@ -234,6 +237,7 @@ def family_purchase():
     args, argerr = require_args('till', 'till_pwd', 'customer', 'pwd', 'amount_euro_equivalent')
     if argerr:
         return argerr
+    conn = None
     try:
         with connect() as conn:
             cursor = conn.cursor()
@@ -281,15 +285,102 @@ def family_purchase():
             amount = args['amount_euro_equivalent']
             q = f"""
                 INSERT INTO purchase ( tenant_id,   family_id, customer_tenant_id, customer_name, amount_euro_equivalent) VALUES
-                                     ({ftenant_id},{fid     },{ctenant_id       },'{cname       }',{amount})
-                RETURNING *;
+                                     ('{ftenant_id}',{fid     },'{ctenant_id       }','{cname       }',{amount})
+                RETURNING amount_euro_equivalent;
             """
             print(q)
             cursor.execute(q)
             p = cursor.fetchone()
             conn.commit()
-            return r_ok({'purchase': p})
+            print(p)
+            p = float(p[0])
+            return r_ok({'purchase_amount': p})
 
     except Exception as e:
         print(e)
+        if conn:
+            conn.rollback()
+        return f'<p>Unable to complete action:</p> <p style="color:red">{e}</p>'
+
+def timestamp_n_seconds_ago(n):
+    current_time = datetime.datetime.now()
+    time_delta = datetime.timedelta(seconds=n)
+    timestamp = current_time - time_delta
+    return timestamp.timestamp()
+
+print(timestamp_n_seconds_ago(60))
+
+# /family/voucher
+# requires authentication of user (via loyalty card)
+# requires authentication of till (outside of scope of project - we’ll just assume the request came from a till)
+# returns the total reduction in payment the till is authorised to issue, this payload is signed cryptographically
+# the till can validate this payload cryptographically before reducing the balance due by the customer for the purchase
+@app.route('/family/voucher')
+def family_voucher():
+    args, argerr = require_args('till', 'till_pwd', 'customer', 'pwd', 'subtotal')
+    if argerr:
+        return argerr
+
+    subtotal = None
+    try:
+        subtotal = float(args['subtotal'])
+    except Exception:
+        return r_bad_request({'message': 'could not parse subtotal as float'})
+
+    conn = None
+    from datetime import datetime, timedelta
+
+    try:
+        with connect() as conn:
+            cursor = conn.cursor()
+
+            # TODO authenticate till
+
+            q = f"""
+                SELECT tenant_id, name, family_id FROM customer WHERE
+                    name = '{args['customer']}' AND
+                    password = '{args['pwd']}';
+            """
+            cursor.execute(q)
+            c = cursor.fetchone()
+            print("customer", c)
+            if c is None:
+                return r_bad_request({
+                    'message': 'failed to authenticate customer'
+                })
+            ctenant_id, cname, family_id = c
+            since = timestamp_n_seconds_ago(60) # TODO: in production use 60*60*24*21 (21 days)
+            q = f"""
+                SELECT amount_euro_equivalent FROM purchase WHERE
+                    tenant_id = '{ctenant_id}' AND
+                    family_id = {family_id} AND
+                    timestamp > {since};
+            """
+            cursor.execute(q)
+            purchases = cursor.fetchall()
+            if purchases is None:
+                return r_ok({
+                    'order_total': subtotal,
+                    'discount_percent': 0,
+                    'subtotal': subtotal,
+                })
+            conn.commit()
+            print(purchases)
+            purchases = map(lambda x: x[0], purchases)
+            discount_percent = min(50, int(math.floor(sum(map(float, purchases)))))
+            discount_decimal = discount_percent / 100
+            if discount_percent < 0:
+                return r_internal_server_error({
+                    'message': 'total purchases negative'
+                })
+            return r_ok({
+                'order_total': subtotal - (discount_decimal * subtotal),
+                'discount_percent': discount_percent,
+                'subtotal': subtotal,
+            })
+
+    except Exception as e:
+        print(e)
+        if conn:
+            conn.rollback()
         return f'<p>Unable to complete action:</p> <p style="color:red">{e}</p>'

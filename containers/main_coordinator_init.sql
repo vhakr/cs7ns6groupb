@@ -3,7 +3,7 @@
 CREATE EXTENSION citus;
 
 CREATE TABLE customer (
-    tenant_id INT,
+    tenant_id VARCHAR(3),
     name VARCHAR(255),
     family_id INT,
     password TEXT,
@@ -11,7 +11,7 @@ CREATE TABLE customer (
 );
 
 CREATE TABLE family (
-    tenant_id INT,
+    tenant_id VARCHAR(3),
     id SERIAL,
     -- m1_tenant_id INT, 
     -- m2_tenant_id INT, 
@@ -26,10 +26,11 @@ CREATE TABLE family (
 
 
 CREATE TABLE purchase (
-    tenant_id INT, id SERIAL,
+    tenant_id VARCHAR(3), id SERIAL,
     family_id INT,
-    customer_tenant_id INT, customer_name VARCHAR(255),
+    customer_tenant_id VARCHAR(3), customer_name VARCHAR(255),
     amount_euro_equivalent DECIMAL,
+    timestamp BIGINT DEFAULT (EXTRACT (EPOCH FROM NOW())),
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -48,8 +49,7 @@ ALTER TABLE purchase
     ADD CONSTRAINT fk_family
         FOREIGN KEY (tenant_id, family_id) 
         REFERENCES family(tenant_id, id);
--- 
--- 
+
 ALTER TABLE family      ADD CONSTRAINT fk_member1 FOREIGN KEY (tenant_id, member1_id) REFERENCES customer(tenant_id, name);
 ALTER TABLE family      ADD CONSTRAINT fk_member2 FOREIGN KEY (tenant_id, member2_id) REFERENCES customer(tenant_id, name);
 ALTER TABLE family      ADD CONSTRAINT fk_member3 FOREIGN KEY (tenant_id, member3_id) REFERENCES customer(tenant_id, name);

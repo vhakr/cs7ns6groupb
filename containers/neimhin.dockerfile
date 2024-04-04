@@ -1,4 +1,4 @@
-from cafe-app-base 
+from neimhin/cafe-app:base
 
 workdir /app/pgdata
 user postgres
