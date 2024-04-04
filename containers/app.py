@@ -36,7 +36,9 @@ DBNAME = 'postgres'
 USER = 'postgres'
 
 def connect():
-    return psycopg2.connect(f"dbname='{DBNAME}' user='{USER}' host='localhost'")
+    conn = psycopg2.connect(f"dbname='{DBNAME}' user='{USER}' host='localhost'")
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE)
+    return conn
 
 @app.route('/')
 def home_page():
