@@ -1,0 +1,2 @@
+gunicorn -w 16 -b 0.0.0.0:5000 -k gevent --pythonpath /app/app.py
+# flask -A /app/app.py --debug run --host=0.0.0.0

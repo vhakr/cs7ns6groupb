@@ -39,8 +39,12 @@ USER root
 run apt-get update
 run apt-get install -y python3
 run apt-get install -y python3-pip
-run apt-get install -y postgresql-server-dev-all
-run apt-get install -y python3-flask
+run apt-get install -y python3-venv
+user postgres
+workdir /app
+run python3 -m venv venv
+run . venv/bin/activate && pip install gunicorn flask psycopg2
+user root
 run apt-get install -y python3-psycopg2
 
 run mkdir -p /app
