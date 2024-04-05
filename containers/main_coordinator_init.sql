@@ -34,6 +34,9 @@ CREATE TABLE purchase (
     PRIMARY KEY (tenant_id, id)
 );
 
+ALTER DATABASE postgres SET citus.shard_count = 3;
+ALTER DATABASE postgres SET citus.shard_replication_factor = 3;
+
 SELECT create_distributed_table('family', 'tenant_id');
 SELECT create_distributed_table('purchase', 'tenant_id', colocate_with => 'family');
 SELECT create_distributed_table('customer', 'tenant_id', colocate_with => 'family');
@@ -62,3 +65,19 @@ ALTER TABLE family      ADD CONSTRAINT fk_member4 FOREIGN KEY (tenant_id, member
 --         REFERENCES customer(tenant_id, name);
 
 SELECT citus_set_coordinator_host('neimhin');
+
+CREATE OR REPLACE FUNCTION si(c VARCHAR(3))
+RETURNS TEXT AS $$
+DECLARE
+    result TEXT;
+BEGIN
+    SELECT nodename INTO result
+    FROM pg_dist_placement AS placement
+    JOIN pg_dist_node AS node ON placement.groupid = node.groupid
+    WHERE node.noderole = 'primary'
+    AND shardid = (SELECT get_shard_id_for_distribution_column('family', c));
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+

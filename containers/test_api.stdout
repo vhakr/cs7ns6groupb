@@ -1,0 +1,27 @@
+[H[J/customer/create?customer=neimhin&pwd=pwd&tenant_id=eur
+
+
+/family/create?customer=neimhin&pwd=pwd&tenant_id=eur&family_id=0
+
+
+/customer/create?customer=cian&pwd=pwd&tenant_id=eur
+{"customer": ["eur", "cian", null, "pwd"]}
+
+/family/join?customer=cian&pwd=pwd&family_tenant_id=eur&family_id=0
+{"message": "family does not exist"}
+
+/family/purchase?customer=cian&pwd=pwd&till=TODO&till_pwd=TODO&amount_euro_equivalent=10
+{"message": "customer is not in a family"}
+
+/family/voucher?till=till&till_pwd=till_pwd&customer=cian&pwd=pwd&subtotal=40
+<p>Unable to complete action:</p> <p style="color:red">column "none" does not exist
+LINE 4:                     family_id = None AND
+                                        ^
+</p>
+
+/family/voucher?till=till&till_pwd=till_pwd&customer=cian&pwd=pwd&subtotal=40
+<p>Unable to complete action:</p> <p style="color:red">column "none" does not exist
+LINE 4:                     family_id = None AND
+                                        ^
+</p>
+

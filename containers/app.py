@@ -9,6 +9,10 @@ def r_bad_request(obj, status=400, mimetype="application/json", format=json.dump
     print(obj)
     return Response(format(obj), status=status, mimetype=mimetype)
 
+def r_access_denied(obj, status=400, mimetype="application/json", format=json.dumps):
+    print(obj)
+    return Response(format(obj), status=status, mimetype=mimetype)
+
 def r_internal_server_error(obj, status=500, mimetype="application/json", format=json.dumps):
     return Response(format(obj), status=status, mimetype=mimetype)
 
@@ -80,7 +84,7 @@ values ('{args['customer']}', '{args['pwd']}', '{args['tenant_id']}') returning 
 
 @app.route("/family/create")
 def family_create():
-    args, argerr = require_args('customer', 'pwd')
+    args, argerr = require_args('customer', 'pwd', 'tenant_id')
     if argerr:
         return argerr
     args['family_id'] = request.args.get('family_id')
@@ -90,24 +94,19 @@ def family_create():
         conn = connect()
         cursor = conn.cursor()
         
-        cursor.execute(f"select tenant_id from customer where name = '{args['customer']}' AND password = '{args['pwd']}'");
+        cursor.execute(f"select tenant_id from customer where tenant_id = '{args['tenant_id']}' AND name = '{args['customer']}' AND password = '{args['pwd']}'");
         row = cursor.fetchone()
-        tenant_id = None
 
         if row is None:
-            return r_bad_request({"message": "could not find customer tenant_id"})
-
-        tenant_id = row[0]
-
-        if tenant_id is None:
-            return "<p> Failed because customer tenant_id is None </p>"
+            return r_access_denied({"message": "authentication failed"})
 
         q = f"""
         SELECT * FROM family WHERE
+            tenant_id = '{args['tenant_id']}' AND (
             member1_id = '{args['customer']}' OR
             member2_id = '{args['customer']}' OR
             member3_id = '{args['customer']}' OR
-            member4_id = '{args['customer']}';
+            member4_id = '{args['customer']}');
         """
         print(q);
         cursor.execute(q)
@@ -123,7 +122,7 @@ def family_create():
                 member1_id 
                 {', id' if args['family_id'] else ''})
             VALUES (
-                '{tenant_id}',
+                '{args['tenant_id']}',
                 '{args['customer']}'
                 {',' + args['family_id'] if args['family_id'] else ''}
                 ) RETURNING *; 
@@ -164,10 +163,11 @@ def family_join():
 
             q = f"""
             SELECT * FROM family WHERE
+                tenant_id = '{family_tenant_id}' AND (
                 member1_id = '{customer}' OR
                 member2_id = '{customer}' OR
                 member3_id = '{customer}' OR
-                member4_id = '{customer}';
+                member4_id = '{customer}');
             """
             print(q);
             cursor.execute(q)
@@ -310,8 +310,6 @@ def timestamp_n_seconds_ago(n):
     timestamp = current_time - time_delta
     return timestamp.timestamp()
 
-print(timestamp_n_seconds_ago(1))
-
 # /family/voucher
 # requires authentication of user (via loyalty card)
 # requires authentication of till (outside of scope of project - we’ll just assume the request came from a till)
@@ -351,7 +349,7 @@ def family_voucher():
                     'message': 'failed to authenticate customer'
                 })
             ctenant_id, cname, family_id = c
-            since = timestamp_n_seconds_ago(6) # TODO: in production use 60*60*24*21 (21 days)
+            since = timestamp_n_seconds_ago(0.1) # TODO: in production use 60*60*24*21 (21 days)
             q = f"""
                 SELECT amount_euro_equivalent, timestamp FROM purchase WHERE
                     tenant_id = '{ctenant_id}' AND

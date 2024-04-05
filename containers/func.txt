@@ -1,0 +1,14 @@
+CREATE FUNCTION si(c VARCHAR(3)) RETURNS TEXT AS
+$$
+BEGIN
+  RETURN QUERY
+  SELECT nodename
+  FROM pg_dist_placement AS placement,
+       pg_dist_node AS node
+  WHERE placement.groupid = node.groupid
+    AND node.noderole = 'primary'
+    AND shardid = (
+      SELECT get_shard_id_for_distribution_column('family', c)
+    );
+END;
+$$ LANGUAGE plpgsql;

@@ -2,3 +2,4 @@ listen_addresses = '*'
 port = 5432
 shared_preload_libraries = 'citus'
 default_transaction_isolation = serializable
+citus.node_conninfo = 'keepalives=1 keepalives_idle=3 keepalives_interval=1 keepalives_count=2 tcp_user_timeout=1000 connect_timeout=3'

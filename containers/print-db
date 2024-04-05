@@ -1,5 +1,9 @@
 #!/bin/bash
-docker exec -it app psql -c "select citus_set_coordinator_host('neimhin');"
-docker exec -it app psql -c "select * from family;"
-docker exec -it app psql -c "select * from customer;"
-docker exec -it app psql -c "select * from purchase;"
+c=app
+if [ ! -z "$1" ]; then
+  c=$1
+fi
+docker exec -it $c psql -c "select citus_set_coordinator_host('neimhin');"
+docker exec -it $c psql -c "select * from family;"
+docker exec -it $c psql -c "select * from customer;"
+docker exec -it $c psql -c "select * from purchase;"
